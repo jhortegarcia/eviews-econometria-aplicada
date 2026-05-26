@@ -42,13 +42,12 @@ Cada archivo `.txt` puede copiarse directamente en el editor de programas de EVi
 
 ### Nota sobre continuaciones de línea
 
-El PDF original usa el símbolo `▶▶` como marcador tipográfico de continuación de línea. En esta transcripción, todas esas líneas fueron **unidas en una sola línea**, ya que EViews no tiene operador de continuación. Las instancias afectadas están documentadas en la sección **CARACTERES DUDOSOS / CORRECCIONES** al final de cada archivo.
+El PDF original usa el símbolo `▶▶` como marcador tipográfico de continuación de línea. En esta transcripción, todas esas líneas fueron **unidas en una sola línea**, ya que EViews no tiene operador de continuación.
 
 ---
 
 ## Advertencias generales
 
-- Los programas fueron transcritos de un PDF **escaneado** (sin texto embebido). Puede haber caracteres ambiguos en casos puntuales; cada uno está documentado en el pie del archivo correspondiente.
 - Los comentarios en español con tildes y eñes han sido conservados como literales de cadena dentro del código. Si su versión de EViews presenta problemas de codificación, reemplazar los caracteres especiales por sus equivalentes sin diacríticos.
 - Algunos programas requieren que el usuario ajuste parámetros iniciales (nivel de convergencia, número de iteraciones, tamaño de muestra, etc.) antes de ejecutarlos.
 
