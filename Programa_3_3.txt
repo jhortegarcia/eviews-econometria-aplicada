@@ -1,0 +1,18 @@
+' ============================================================
+' Programa 3.3
+' Como registrar un maximo? Metodo A
+' (pp. 221-222)
+' ============================================================
+
+'Asumiremos que el vector llamado
+'_VectorAuxiliar, el cual
+'contiene los resultados intermedios, ya ha
+'sido previamente calculado.
+
+FOR !i = 1 TO @ROWS(_VectorAuxiliar)
+   IF _VectorAuxiliar(!i) = @MAX(_VectorAuxiliar) THEN
+         !PosMaximo = !i
+         EXITLOOP
+   ENDIF
+NEXT !i
+

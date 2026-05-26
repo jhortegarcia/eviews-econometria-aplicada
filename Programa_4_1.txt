@@ -1,0 +1,306 @@
+' ============================================================
+' Programa 4.1
+' Exploracion de transformaciones univariadas
+' (pp. 247-255)
+' ============================================================
+' USO:
+'
+' * El primer argumento (%0) representa la variable dependiente.
+' * El segundo argumento (%1) representa un grupo que contiene
+'   las potenciales variables independientes.
+' * No incluya una serie constante en el grupo (%1).
+' * Considere incluir una variable tendencial como uno de los
+'   posibles regresores dentro del grupo.
+'   Podra generar esta variable con el comando:
+'              GENR T = @TREND + 1
+'
+' Ejemplo: RUN Univariadas Y Grupo1
+'
+' ============================================================
+' Las transformaciones seran las siguientes:
+'
+' ====================================================
+' #    TIPO             COMENTARIOS
+'
+' ====================================================
+' 1    X                Sin transformar
+' 2    LOG(X)           Si el minimo es mayor que cero
+' 3    EXP(X)           Si el maximo es menor o igual que 709
+' 4    SQR(X)           Si el minimo es mayor o igual que cero
+' 5    X^2
+' 6    X^3
+' 7    1/X              Si no hay un valor igual a cero
+' 8    D(X)             Primera diferencia
+' 9    @PCH(X)          Si no hay un valor igual a cero
+' 10   X(-1)            Primer rezago
+' 11   X(-2)            Segundo rezago
+' 12   2*X - X(-1)      Proyeccion lineal
+' 13   X^2 / X(-1)      Proyeccion geometrica
+'                       (Si no hay un valor igual a cero)
+'
+' ====================================================
+
+SUBROUTINE Transform_1(SERIES Origen, SERIES Destino)
+   Destino = Origen
+   !OK = 1
+ENDSUB
+
+SUBROUTINE Transform_2(SERIES Origen, SERIES Destino)
+   IF @MIN(Origen)>0 THEN
+         Destino = LOG(Origen)
+         !OK = 1
+   ELSE
+         !OK = 0
+   ENDIF
+ENDSUB
+
+SUBROUTINE Transform_3(SERIES Origen, SERIES Destino)
+   IF @MAX(Origen)<=709 THEN
+         Destino = EXP(Origen)
+         !OK = 1
+   ELSE
+         !OK = 0
+   ENDIF
+ENDSUB
+
+SUBROUTINE Transform_4(SERIES Origen, SERIES Destino)
+   IF @MIN(Origen)>=0 THEN
+         Destino = SQR(Origen)
+         !OK = 1
+   ELSE
+         !OK = 0
+   ENDIF
+ENDSUB
+
+SUBROUTINE Transform_5(SERIES Origen, SERIES Destino)
+   Destino = Origen^2
+   !OK = 1
+ENDSUB
+
+SUBROUTINE Transform_6(SERIES Origen, SERIES Destino)
+   Destino = Origen^3
+   !OK = 1
+ENDSUB
+
+SUBROUTINE Transform_7(SERIES Origen, SERIES Destino)
+   IF @MIN(ABS(Origen))>0 THEN
+         Destino = 1/Origen
+         !OK = 1
+   ELSE
+         !OK = 0
+   ENDIF
+ENDSUB
+
+SUBROUTINE Transform_8(SERIES Origen, SERIES Destino)
+   Destino = NA
+   Destino = D(Origen)
+   !OK = 1
+ENDSUB
+
+SUBROUTINE Transform_9(SERIES Origen, SERIES Destino)
+   Destino = NA
+   IF @MIN(ABS(Origen))>0 THEN
+         Destino = @PCH(Origen)
+         !OK = 1
+   ELSE
+         !OK = 0
+   ENDIF
+ENDSUB
+
+SUBROUTINE Transform_10(SERIES Origen, SERIES Destino)
+   Destino = NA
+   Destino = Origen(-1)
+   !OK = 1
+ENDSUB
+
+SUBROUTINE Transform_11(SERIES Origen, SERIES Destino)
+   Destino = NA
+   Destino = Origen(-2)
+   !OK = 1
+ENDSUB
+
+SUBROUTINE Transform_12(SERIES Origen, SERIES Destino)
+   Destino = NA
+   Destino = 2*Origen - Origen(-1)
+   !OK = 1
+ENDSUB
+
+SUBROUTINE Transform_13(SERIES Origen, SERIES Destino)
+   Destino = NA
+   IF @MIN(ABS(Origen))>0 THEN
+         Destino = Origen^2 / Origen(-1)
+         !OK = 1
+   ELSE
+         !OK = 0
+   ENDIF
+ENDSUB
+
+SUBROUTINE CreaTablaMaestra
+
+   IF @ISOBJECT("Univariadas") THEN
+         D Univariadas
+   ENDIF
+
+   TABLE(6+!NumTransforms,1+!NumRegresores) Univariadas
+
+   SETCOLWIDTH(Univariadas,1,30)
+   SETLINE(Univariadas,1)
+   Univariadas(2,2)="R2 de la regresion de "+%0+" versus cada regresor transformado"
+   SETLINE(Univariadas,3)
+   FOR !i = 1 TO !NumRegresores
+         Univariadas(4,1+!i)={%1}.@SERIESNAME(!i)
+   NEXT
+   SETCELL(Univariadas,4,1," TRANSFORMACION","L")
+   SETLINE(Univariadas,5)
+   SETCELL(Univariadas,6,1, "SIN TRANSFORMAR","L")
+   SETCELL(Univariadas,7,1, "LOGARITMO","L")
+   SETCELL(Univariadas,8,1, "EXPONENCIAL","L")
+   SETCELL(Univariadas,9,1, "RAIZ CUADRADA","L")
+   SETCELL(Univariadas,10,1, "CUADRADO","L")
+   SETCELL(Univariadas,11,1, "CUBO","L")
+   SETCELL(Univariadas,12,1, "INVERSA","L")
+   SETCELL(Univariadas,13,1, "CAMBIO","L")
+   SETCELL(Univariadas,14,1, "CAMBIO PORCENTUAL","L")
+   SETCELL(Univariadas,15,1, "PRIMER REZAGO","L")
+   SETCELL(Univariadas,16,1, "SEGUNDO REZAGO","L")
+   SETCELL(Univariadas,17,1, "PROYECCION LINEAL","L")
+   SETCELL(Univariadas,18,1, "PROYECCION GEOMETRICA","L")
+   SETLINE(Univariadas,19)
+
+ENDSUB
+
+SUBROUTINE Secuencia
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_1({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,6,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_2({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,7,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_3({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,8,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_4({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,9,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_5({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,10,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_6({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,11,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_7({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,12,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_8({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,13,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_9({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,14,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_10({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,15,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_11({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,16,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_12({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,17,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+   FOR !i = 1 TO !NumRegresores
+         %Var = {%1}.@SERIESNAME(!i)
+         CALL Transform_13({%Var},_Prueba)
+         IF (!OK=1) AND (@VAR(_Prueba)<>0) THEN
+               _Temp.LS {%0} C _Prueba
+               SETCELL(Univariadas,18,1+!i,_Temp.@R2,!NumDecimales)
+         ENDIF
+   NEXT !i
+
+ENDSUB
+
+' Inicio del cuerpo del programa
+' ================================================
+
+!NumRegresores = {%1}.@COUNT
+!NumTransforms = 13
+!NumDecimales = 4
+EQUATION _Temp
+SERIES _Prueba
+
+CALL CreaTablaMaestra
+CALL Secuencia
+
+D _Temp _Prueba
+= Univariadas

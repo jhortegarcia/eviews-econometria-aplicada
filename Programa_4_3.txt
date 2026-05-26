@@ -1,0 +1,63 @@
+' ============================================================
+' Programa 4.3
+' Analisis de componentes principales
+' (pp. 301-303)
+' ============================================================
+'Programa para realizar el analisis ACP
+' ============================================================
+'USO:
+'
+' Se asume que el nombre del grupo de
+' variables bajo analisis se proporciona
+' como primer argumento del programa (%0)
+'
+'Ejemplo:          RUN ACP Grupo1
+' ============================================================
+
+'Primero convertimos el grupo en una matriz:
+STOM({%0},_X)
+
+'Recogemos el numero de variables bajo
+'analisis:
+!NumVars = @COLUMNS(_X)
+
+'Utilizamos una matriz simetrica para
+'registrar la matriz de correlaciones:
+SYM(!NumVars) _V
+_V = @COR(_X)
+
+'Y calculamos los vectores y valores
+'propios del sistema:
+MATRIX _A=@EIGENVECTORS(_V)
+VECTOR _D=@EIGENVALUES(_V)
+
+'Presentaremos los resultados del analisis
+'en una tabla llamada ResultadosACP:
+IF @ISOBJECT("ResultadosACP") THEN
+   D ResultadosACP
+ENDIF
+TABLE(7+!NumVars,3+!NumVars) ResultadosACP
+
+'Ahora llenamos la matriz con los resultados:
+ResultadosACP(1,1)="ANALISIS ACP SOBRE EL GRUPO "+%0
+SETLINE(ResultadosACP,2)
+ResultadosACP(3,1)="Variables del grupo"
+SETLINE(ResultadosACP,4)
+
+FOR !i=1 to !NumVars
+   ResultadosACP(4+!i,1)={%0}.@SERIESNAME(!i)
+   ResultadosACP(3,3+!i)="Z"+@STR(!i)
+   FOR !j=1 to !NumVars
+      SETCELL(ResultadosACP,4+!i,3+!j,_A(!i,!NumVars-!j+1),4)
+   NEXT !j
+   SETCELL(ResultadosACP,6+!NumVars,3+!i,_D(!NumVars-!i+1)/!NumVars,4)
+NEXT !i
+SETLINE(ResultadosACP,5+!NumVars)
+ResultadosACP(6+!NumVars,1)="Proporcion de la varianza total"
+SETLINE(ResultadosACP,7+!NumVars)
+
+'Eliminamos las variables permanentes auxiliares:
+D _X _A _D _V
+
+'Y presentamos en pantalla la tabla de resultados:
+= ResultadosACP

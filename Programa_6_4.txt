@@ -1,0 +1,71 @@
+' ============================================================
+' Programa 6.4
+' Programa para el test de Spearman
+' (pp. 416-417)
+' ============================================================
+'Programa para detectar la presencia de
+'heterocedasticidad sobre la base del
+'estadistico de Spearman.
+' ============================================================
+'USO:
+'   Programa creado para un archivo de trabajo "undated".
+'   El nombre de la variable dependiente y el de
+'   la variable escala deberan pasarse como los
+'   dos primeros argumentos del programa.
+'   Si la variable escala es una transformacion
+'   de alguno de los regresores originales,
+'   debera crearse una nueva serie que contenga
+'   dicha transformacion.
+'      Ejemplo:
+'      GENR X2_2 = X2^2
+'      X2_2 seria el segundo argumento del programa.
+'   Debera crearse un grupo llamado Indep que
+'   contenga todos los regresores del modelo.
+' ============================================================
+
+SMPL @ALL
+GENR _Orden = @TREND
+
+TABLE(6,2) ResultSp_%1
+ResultSp_%1(1,1) = "Test de Spearman"
+SETCOLWIDTH(ResultSp_%1,1,15)
+SETLINE(ResultSp_%1,2)
+ResultSp_%1(3,1) = "Var. escala"
+ResultSp_%1(3,2) = %1
+SETLINE(ResultSp_%1,4)
+ResultSp_%1(5,1) = "T_stat."
+ResultSp_%1(6,1) = "T_prob."
+
+Genr _Orden = @TREND
+
+'Regresion principal.
+' ============================================================
+EQUATION _Temp.LS %0 c Indep
+
+'Ordenacion segun volatilidad.
+' ============================================================
+SORT ABS(Resid)
+GENR _Resid=@TREND
+
+'Ordenacion segun variable escala.
+' ============================================================
+SORT %1
+GENR _Escala=@TREND
+
+SORT _Orden
+
+'Construccion y reporte de estadisticos.
+' ============================================================
+GENR _Dif=(_Resid-_Escala)^2
+!Rxe=1-(6*@SUM(_Dif))/(_Temp.@REGOBS*(_Temp.@REGOBS^2-1))
+!Sp=(!Rxe*(_Temp.@REGOBS-2)^(1/2))/(((1-!Rxe^2)^(1/2)))
+!ProbSp=@TDIST(!Sp,_Temp.@REGOBS-2)
+
+SETCELL(ResultSp_%1,5,2,!Sp,5)
+SETCELL(ResultSp_%1,6,2,!ProbSp,5)
+
+'Eliminamos los objetos temporales.
+' ============================================================
+D _*
+
+'Fin del programa.

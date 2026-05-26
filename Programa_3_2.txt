@@ -1,0 +1,22 @@
+' ============================================================
+' Programa 3.2
+' Captura de resultados intermedios mediante un vector
+' (p. 220)
+' ============================================================
+
+'Creamos el vector de registro y lo inicializamos
+'a cero:
+VECTOR(!NumCasos) _Registro = 0
+
+'El bucle principal:
+FOR !i = 1 TO !NumCasos
+
+'================================================
+'En este punto se desarrolla el analisis requerido.
+'================================================
+
+'Registramos los resultados:
+_Registro(!i) = (...)
+
+'Cerramos el bucle principal:
+NEXT !i

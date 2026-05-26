@@ -1,0 +1,95 @@
+' ============================================================
+' Programa 6.2
+' Procedimiento de busqueda de Hildreth-Lu
+' (pp. 392-394)
+' ============================================================
+'Programa para la estimacion del coeficiente de
+'correlacion sobre la base del procedimiento de
+'busqueda de Hildreth-Lu.
+' ============================================================
+'USO:
+'   El nombre de la variable dependiente debera pasarse
+'   como el primer argumento del programa.
+'   Debera crearse un grupo llamado Indep que contenga
+'   a todos los regresores del modelo.
+'   La busqueda se hara a dos niveles; se reportara un
+'   valor a dos puntos decimales.
+' ============================================================
+
+TABLE(3,2) Result_HL
+Result_HL(1,1) = "Metodo de Hildreth-Lu"
+SETCOLWIDTH(Result_HL,1,15)
+SETLINE(Result_HL,2)
+Result_HL(3,1) = "Valor rho"
+
+!SCRmin = 10000
+
+GROUP Indep_dif
+!k = Indep.@COUNT
+
+EQUATION _Temp
+
+'Primer nivel de busqueda.
+' ============================================================
+
+FOR !r = -0.9 to 0.9 STEP 0.1
+
+   GENR _DepDif = %0 - !r*%0(-1)
+
+   FOR !n = 1 to !k
+         %Name = Indep.@SERIESNAME(!n)
+         GENR _IndeDif_!n = Indep(!n) - !r*%Name(-1)
+         Indep_dif.ADD _IndeDif_!n
+   NEXT
+
+   _Temp.LS _DepDif c Indep_dif
+   !Scr = _Temp.@SSR
+   IF !Scr < !SCRmin THEN
+         !SCRmin = !Scr
+         !Rho1 = !r
+   ENDIF
+
+NEXT
+
+'Segundo nivel de busqueda.
+' ============================================================
+
+!Li = !Rho1 - 0.1
+!Ls = !Rho1 + 0.1
+!SCRmin = 10000
+
+FOR !r2 = !Li to !Ls STEP 0.01
+
+   GENR _DepDif = %0 - !r2*%0(-1)
+
+   FOR !n = 1 to !k
+         %Name = Indep.@SERIESNAME(!n)
+         GENR _IndeDif_!n = Indep(!n) - !r2*%Name(-1)
+         Indep_dif.ADD _IndeDif_!n
+   NEXT
+
+   _Temp.LS _DepDif c Indep_dif
+   !Scr = _Temp.@SSR
+   IF !Scr < !SCRmin THEN
+         !SCRmin = !Scr
+         !Rho2 = !r2
+   ENDIF
+
+NEXT
+
+'Registro de resultados.
+' ============================================================
+SETCELL(Result_HL,3,2,!Rho2,3)
+
+'Eliminamos los objetos temporales.
+' ============================================================
+
+FOR !i = 1 to !k
+   D _IndeDif_!i
+NEXT
+
+D Indep_dif
+D _DepDif
+D _Temp
+
+'Fin del programa.

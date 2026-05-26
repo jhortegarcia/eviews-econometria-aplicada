@@ -1,0 +1,137 @@
+' ============================================================
+' Programa 3.5
+' Rutinas para ordenar ascendentemente un vector
+' (pp. 225-229)
+' ============================================================
+' Supuesto:
+'    (*) El vector se llama Valores
+'
+
+'================================================
+'Rutina de soporte.
+'Permuta dos elementos del vector de datos.
+'================================================
+
+SUBROUTINE Permuta(SCALAR !pos1, SCALAR !pos2)
+   !aux=valores(!pos1)
+   Valores(!pos1)=Valores(!pos2)
+   Valores(!pos2)=!aux
+ENDSUB
+
+'Rutina principal
+'Aplica el algoritmo Quick-Sort para ordenar
+'el vector de datos recursivamente.
+'================================================
+' Uso: Ordena(Posicion inicial, Posicion final)
+'
+' Ejemplo: Ordena(1,100)
+'
+'================================================
+
+SUBROUTINE Ordena(SCALAR !inicio, SCALAR !final)
+
+'Si solo queda uno o ninguno, entonces se
+'termina el proceso.
+
+   IF !final<=!inicio THEN
+         RETURN
+   ENDIF
+
+'Si solo quedan dos, entonces se comparan y
+'el proceso termina.
+
+   !aux=!final-!inicio
+   IF !aux=1 THEN
+         IF Valores(!inicio)>Valores(!final) THEN
+               'Permutamos los valores
+               CALL Permuta(!inicio,!final)
+         ENDIF
+         RETURN
+   ENDIF
+
+'Si quedan tres o mas, se parte la muestra en dos
+'secciones iguales y se ordenan separadamente.
+
+   !pivote=!inicio-1+@CEILING((!final-!inicio+1)/2)
+
+'Todos los elementos mayores al pivote van debajo
+'de el y viceversa.
+
+   'Ponemos el pivote al final
+   CALL Permuta(!pivote, !final)
+
+   'Y separamos los elementos en las dos mitades
+   '(menores y mayores que el pivote):
+
+   !valorpivote=Valores(!final)
+
+   'El bucle principal
+   'Este es un bucle infinito que se rompe con
+   'la instruccion EXITLOOP dentro de un
+   'condicional.
+   WHILE 1=1
+         'Barremos la lista de los extremos al centro
+         !i=!inicio
+         !j=!final
+
+         'Encontramos el primer elemento en el
+         'hemisferio equivocado (esta arriba debiendo
+         'estar abajo).
+         WHILE (!i<!j) AND (Valores(!i)<=!valorpivote)
+               !i=!i+1
+         WEND
+
+         'Cabe notar que !i puede superar la
+         'posicion central si todo el primer
+         'hemisferio se encuentra ordenado
+         'ascendentemente y el valor del pivote
+         'pertenece al segundo hemisferio.
+
+         'Encontramos el primer elemento en el
+         'hemisferio equivocado (esta abajo
+         'debiendo estar arriba).
+         WHILE (!i<!j) AND (Valores(!j)>=!valorpivote)
+               !j=!j-1
+         WEND
+
+         'Si no llegan a igualarse !i y !j, los
+         'datos estan desordenados. Entonces
+         'permutamos los valores fuera de orden y
+         'continuamos el bucle.
+
+         'En caso contrario, se tiene el vector
+         'Valores preordenado por hemisferios y
+         'abandonamos el bucle principal para pasar
+         'a ordenar cada hemisferio internamente.
+         IF !i<!j THEN
+               CALL Permuta(!i, !j)
+         ELSE
+               'Reponemos el elemento cambiado en su lugar
+               CALL Permuta(!i, !final)
+               EXITLOOP
+         ENDIF
+   WEND
+
+'Finalmente ordenamos los dos hemisferios,
+'divididos por el elemento i-esimo (que se
+'sabe ahora en su lugar correcto),
+'aplicando el mismo procedimiento
+'recursivamente.
+CALL Ordena(!inicio,!i-1)
+CALL Ordena(!i+1,!final)
+
+ENDSUB
+
+'================================================
+' Codigo de prueba
+'================================================
+
+'Fijamos el tamano del vector:
+!NumElementos=300
+
+'Creamos un vector aleatorio:
+VECTOR(!NumElementos) Valores
+Valores.FILL(L) @RND
+
+'Y lo ordenamos:
+CALL Ordena(1,!NumElementos)

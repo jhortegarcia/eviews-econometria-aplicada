@@ -1,0 +1,38 @@
+' ============================================================
+' Programa 3.1
+' Tecnica de estimacion Jacknife
+' (pp. 217-218)
+' ============================================================
+
+'Fijamos el orden inicial:
+GENR _OrdenInicial = @TREND + 1
+
+'Generamos la serie aleatoria:
+GENR _AleatoriaAuxiliar = NRND
+
+'Ordenamos el archivo de trabajo segun esta nueva
+'serie:
+SORT _AleatoriaAuxiliar
+
+'Tomamos las m primeras observaciones
+'(m debe haberse fijado con anterioridad):
+SMPL 1 !m
+
+'================================================
+'En este punto se desarrolla el analisis requerido.
+'================================================
+
+'Reponemos la muestra:
+SMPL @ALL
+
+'Reponemos el orden original:
+SORT _OrdenInicial
+
+'================================================
+'En este punto se registran los resultados
+'del analisis.
+'================================================
+
+'Y eliminamos las variables auxiliares:
+D _OrdenInicial _AleatoriaAuxiliar
+

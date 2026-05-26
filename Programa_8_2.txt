@@ -1,0 +1,91 @@
+' ============================================================
+' Programa 8.2
+' Verificando la presencia de correlacion contemporanea
+' (pp. 505-507)
+' ============================================================
+'Programa para verificar la existencia de correlacion
+'contemporanea entre los errores de ecuaciones
+'aparentemente no relacionadas.
+' ============================================================
+'USO:
+'         Debera crear un grupo Dep que contenga
+'         las variables dependientes.
+'         Debera crear un conjunto de grupos Indep
+'         (Indep1, Indep2, etc.) que contenga los
+'         regresores de cada ecuacion, incluyendo
+'         el intercepto, de ser el caso. Asegurese
+'         de que el orden de las variables en
+'         independientes Dep coincide con el
+'         numero del grupo Indep; es decir, los
+'         regresores asociados a la primera
+'         variable incluida en Dep deberan agruparse
+'         en el grupo Indep1.
+'         Debera indicar el numero de ecuaciones
+'         involucradas(!m).
+' ============================================================
+
+'Indique el numero de ecuaciones.
+!m = 3
+
+TABLE(6+!m,2) Resultados
+SETCOLWIDTH(Resultados,2,30)
+SETCELL(Resultados,1,1,"Resultados de la prueba Chi-cuadrado")
+SETLINE(Resultados,2)
+SETCELL(Resultados,3,1,"Ecuaciones involucradas")
+SETLINE(Resultados,4+!m)
+SETCELL(Resultados,5+!m,1,"Chi Stat")
+SETCELL(Resultados,6+!m,1,"Prob")
+SETLINE(Resultados,7+!m)
+
+'Creacion del sistema.
+' ============================================================
+SYSTEM Sur
+
+!Pos = 1
+FOR !i = 1 to !m
+
+   %Name = "Eq. "+@STR(!i)
+   %Dep = Dep.@SERIESNAME(!i)
+   IF Indep!i.@SERIESNAME(1) = "C" THEN
+         %Rep = %Dep+" = C("+@STR(!Pos)+")+":
+         !Inic = 2
+         !Pos = !Pos+1
+   ELSE
+         %Rep = %Dep+" = "
+         !Inic = 1
+   ENDIF
+
+   FOR !j = !Inic to Indep!i.@COUNT-1
+         %Rep = %Rep+"C("+@STR(!Pos)+")*"+Indep!i.@SERIESNAME(!j)+"+"
+         !Pos = !Pos+1
+   NEXT
+
+   %Rep = %Rep+"C("+@STR(!Pos)+")*"+Indep!i.@SERIESNAME(Indep!i.@COUNT)
+
+   !Pos = !Pos+1
+   SETCELL(Resultados,3+!i,1,%Name)
+   SETCELL(Resultados,3+!i,2,%Rep,"l")
+   Sur.APPEND %Rep
+
+NEXT
+
+Sur.LS
+FREEZE(_Extract) Sur.RESIDCOR
+
+!Chi = 0
+FOR !i = 1 to !m-1
+   FOR !j = !i+1 to !m
+         !Chi = !Chi + @VAL(_Extract(2+!i,1+!j))^2
+   NEXT
+NEXT
+
+!Chi = !Chi*Sur.@REGOBS
+!Prob = @CHISQ(!Chi,!m*(!m-1)/2)
+SETCELL(Resultados,5+!m,2,!Chi,3,"l")
+SETCELL(Resultados,6+!m,2,!Prob,4,"l")
+
+'Eliminamos objetos temporales.
+' ============================================================
+D _*
+
+'Fin del programa.

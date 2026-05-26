@@ -1,0 +1,91 @@
+' ============================================================
+' Programa 8.3
+' Consistencia del estimador VI
+' (pp. 532-534)
+' ============================================================
+'Programa para verificar la consistencia del estimador VI.
+' ============================================================
+'USO:
+'         Debera indicar los distintos tamanos de
+'         muestra por evaluar (!Inicio y !Fin),
+'         asi como el numero de replicaciones de
+'         cada simulacion (!Vueltas).
+' ============================================================
+
+'Interaccion con el usuario.
+' ============================================================
+!Inicio = 20
+!Fin = 300
+!Paso = 40
+!Vueltas = 1000
+
+'Declaracion de la subrutina.
+' ============================================================
+SUBROUTINE Instrumentos (SCALAR !Muestra, SCALAR !Repeticiones)
+
+   SMPL 1 !Muestra
+   !Contador = 0
+   FOR !i = 1 to !Repeticiones
+         GENR _Error = NRND
+         GENR _x2 = 0.25 + 0.75*_x3 + _Error*0.75
+         GENR _y = 1.25 + 1.23*_x1 + 1.98*_x2 + _Error
+
+         Mico.LS _y c _x1 _x2
+         Inst.TSLS _y c _x1 _x2 @ c _x1 _x3
+         _Guardo_Mico(!i) = Mico.C(3)
+         _Guardo_Inst(!i) = Inst.C(3)
+   NEXT
+
+   !MeanM = @MEAN(_Guardo_Mico)
+   !MeanI = @MEAN(_Guardo_Inst)
+   !SdM = @STDEV(_Guardo_Mico)
+   !SdI = @STDEV(_Guardo_Inst)
+
+ENDSUB
+' ============================================================
+
+WORKFILE u !Fin
+
+'Preparacion de la tabla de resultados.
+' ============================================================
+TABLE(9,9) Simulaciones
+SETLINE(Simulaciones,4)
+SETLINE(Simulaciones,9)
+SETLINE(Simulaciones,2)
+SETCOLWIDTH(Simulaciones,1,15)
+SETCELL(Simulaciones,1,1,"Resultados de las Simulaciones")
+SETCELL(Simulaciones,3,1,"Muestra","r")
+SETCELL(Simulaciones,5,1,"Media Mico","l")
+SETCELL(Simulaciones,6,1,"Stdev. Mico","l")
+SETCELL(Simulaciones,7,1,"Media Inst.","l")
+SETCELL(Simulaciones,8,1,"Stdev. Inst.","l")
+
+'Declaracion de objetos y variables fijas.
+' ============================================================
+VECTOR(!Vueltas) _Guardo_Mico = 0
+VECTOR(!Vueltas) _Guardo_Inst = 0
+
+EQUATION Mico
+EQUATION Inst
+
+GENR _x1 = NRND + 2
+GENR _x3 = NRND + 1.5
+
+'Algoritmo principal: consistencia de Binst.
+' ============================================================
+!Pos = 2
+FOR !j = !Inicio to !Fin STEP !Paso
+   SETCELL(Simulaciones,3,!Pos,!j,0)
+   CALL Instrumentos (!j,!Vueltas)
+   SETCELL(Simulaciones,5,!Pos,!MeanM,2)
+   SETCELL(Simulaciones,6,!Pos,!SdM,3)
+   SETCELL(Simulaciones,7,!Pos,!MeanI,2)
+   SETCELL(Simulaciones,8,!Pos,!SdI,3)
+   !Pos = !Pos + 1
+NEXT
+
+'Eliminamos los objetos temporales.
+' ============================================================
+D _*
+
+'Fin del programa.

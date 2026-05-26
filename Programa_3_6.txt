@@ -1,0 +1,76 @@
+' ============================================================
+' Programa 3.6
+' Como crear un grafico animado simple
+' (pp. 231-232)
+' ============================================================
+
+'================================================
+' Programa para crear un grafico animado simple
+'================================================
+
+SUBROUTINE LlenaCoordenadas(SCALAR !Angulo1)
+
+'El angulo se refiere al vertice del cuadrado
+'en el primer cuadrante.
+
+   FOR !i = 1 to 4
+         X(!i) = Cos((!Angulo1+90*(!i-1))*!Pi/180)
+         Y(!i) = Sin((!Angulo1+90*(!i-1))*!Pi/180)
+   NEXT !i
+
+'Mediante un quinto vertice sobre el primero
+'cerramos el cuadrado.
+
+   X(5) = X(1)
+   Y(5) = Y(1)
+
+'Ahora dibujamos la circunferencia
+'circunscrita.
+
+   !Inc=360/!NumPuntosCirc
+   !ang = !Inc
+   !i = 1
+
+   WHILE (!ang<=360) AND (!i<=!NumPuntosCirc)
+         X(5+!i)=Cos((!Angulo1+!ang)*!Pi/180)
+         Y(5+!i)=Sin((!Angulo1+!ang)*!Pi/180)
+         !ang = !ang + !Inc
+         !i=!i+1
+   WEND
+
+'Y actualizamos el grafico en la pantalla.
+
+   Cuadrado.SCAT(c)
+
+ENDSUB
+
+
+'================================================
+' Aqui comienza el cuerpo principal del programa.
+'================================================
+
+!NumVueltas=1
+!NumPuntosCirc=50
+!Pi=3.14159265358979
+!TamanioTotal=5+!NumPuntosCirc
+
+WORKFILE Nuevo u !TamanioTotal
+SERIES X=0
+SERIES Y=0
+
+GROUP Cuadrado X Y
+
+CALL LlenaCoordenadas(45)
+
+FOR !Vuelta = 1 TO !NumVueltas*4
+
+   FOR !a = 46 TO 90
+         CALL LlenaCoordenadas(!a)
+   NEXT !a
+
+   FOR !a = 0 TO 45
+         CALL LlenaCoordenadas(!a)
+   NEXT !a
+
+NEXT !Vuelta
+

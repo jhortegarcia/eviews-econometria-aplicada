@@ -1,0 +1,139 @@
+' ============================================================
+' Programa 9.1
+' Aplicacion secuencial del test de Dickey-Fuller aumentado (ADF)
+' (pp. 570-573)
+' ============================================================
+'Programa para la deteccion de raiz unitaria.
+'Trabajo secuencial con el test de Dickey-Fuller Aumentado.
+' ============================================================
+'USO:
+'         La variable por ser analizada debe
+'         pasarse como el primer argumento del
+'         programa (%0).
+'         Debe indicarse el numero de rezagos a
+'         incluir en la prueba ADF (!Rez).
+' ============================================================
+
+!Rez = 2
+
+TABLE(8,2) Resultado_%0
+SETCOLWIDTH(Resultado_%0,1,25)
+SETCELL(Resultado_%0,1,1,"Resultado de la prueba ADF secuencial")
+SETLINE(Resultado_%0,2)
+SETCELL(Resultado_%0,3,1,"Serie analizada","r")
+SETCELL(Resultado_%0,3,2,%0)
+SETCELL(Resultado_%0,4,1,"No. de rezagos","r")
+SETCELL(Resultado_%0,4,2,!Rez,0)
+SETLINE(Resultado_%0,5)
+SETLINE(Resultado_%0,8)
+
+%Resp1 = "La serie no tiene raiz unitaria"
+%Resp2 = "La serie tiene raiz unitaria"
+%Resp3 = "La serie es explosiva"
+%Espec1 = "ADF con intercepto y tendencia"
+%Espec2 = "ADF con intercepto"
+%Espec3 = "ADF sin elementos deterministicos"
+SETCELL(Resultado_%0,6,1,%Resp1,"c")
+SETCELL(Resultado_%0,7,1,%Espec1,"c")
+
+GENR Variable = %0
+!Check = 0
+!Check2 = 0
+!Check3 = 0
+
+'Primera evaluacion (intercepto y tendencia).
+' ============================================================
+FREEZE(Captura1) Variable.UROOT(!Rez,t)
+!McK1 = @VAL(Captura1(2,5))
+!tt = @VAL(Captura1(1,2))
+!tbt = @VAL(Captura1(17+!Rez+2,4))
+
+IF !tt > 0 THEN
+   !Check3 = 1
+ENDIF
+
+IF abs(!tt) < abs(!McK1) THEN
+
+   IF abs(!tbt) > 2.79 THEN
+
+         IF abs(!tt) < 1.96 THEN
+         !Check = 1
+         ENDIF
+
+   ELSE
+   !Check2 = 1
+
+'Segunda evaluacion (intercepto).
+' ============================================================
+      FREEZE(Captura2) Variable.uroot(!Rez,c)
+      !McK2 = @VAL(Captura2(2,5))
+      !tu = @VAL(Captura2(1,2))
+      !tau = @VAL(Captura2(17+!rez+1,4))
+
+         IF !tu > 0 THEN
+         !Check3 =1
+         ENDIF
+
+         IF abs(!tu) < abs(!McK2) THEN
+
+               IF abs(!tau) > 2.54 THEN
+
+                     IF abs(!tu) < 1.96 THEN
+                     !Check = 1
+                     ENDIF
+
+               ELSE
+               !Check2 = 2
+
+'Tercera evaluacion (sin elementos deterministicos).
+' ============================================================
+               FREEZE(Captura3)
+               Variable.uroot(!Rez,n)
+               !McK3 = @VAL(Captura3(2,5))
+               !t = @VAL(Captura3(1,2))
+
+                     IF !t > 0 THEN
+                     !Check3 = 1
+                     ENDIF
+
+                     IF abs(!t) < abs(!McK3) THEN
+                     !Check = 1
+                     ENDIF
+
+               ENDIF
+
+         ENDIF
+
+   ENDIF
+
+ENDIF
+
+'Registro de resultados.
+' ============================================================
+IF !Check = 1 THEN
+   SETCELL(Resultado_%0,6,1,%Resp2,"c")
+ENDIF
+
+IF !Check3 = 1 THEN
+   SETCELL(Resultado_%0,6,1,%Resp3,"c")
+ENDIF
+
+IF !Check2 = 1 THEN
+   SETCELL(Resultado_%0,7,1,%Espec2,"c")
+ENDIF
+
+IF !Check2 = 2 THEN
+   SETCELL(Resultado_%0,7,1,%Espec3,"c")
+ENDIF
+
+'Eliminamos objetos temporales.
+' ============================================================
+FOR !i = 1 to 3
+      IF @ISOBJECT("Captura"+@STR(!i)) = 1 THEN
+      D Captura!i
+      ENDIF
+NEXT
+
+D Variable
+
+'Fin del programa.

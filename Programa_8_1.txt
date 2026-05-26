@@ -1,0 +1,107 @@
+' ============================================================
+' Programa 8.1
+' Test de Hausman
+' (pp. 496-498)
+' ============================================================
+'Programa para la ejecucion del test de Hausman
+'en el contexto de una estimacion por variables
+'instrumentales
+' ============================================================
+'USO:
+' El nombre de la variable dependiente debera
+' pasarse como el primer argumento del
+' programa (%0).
+' Debera crear un grupo INDEP que contenga
+' los regresores del modelo original (incluya
+' el intercepto).
+' Incluya primero los regresores que presume
+' estocasticos al momento de crear este
+' grupo. Ademas, debera crear un grupo INSTRU
+' que contenga los instrumentos. Incluya
+' primero las nuevas variables exogenas al
+' momento de crear este grupo, de acuerdo con
+' el orden en que fueron introducidos los
+' regresores estocasticos para los que sirven
+' de instrumentos.
+'   Ejemplo: Y = f(X1,X2,X3,c), donde X1 y X3
+'   son estocasticos. Se tiene un conjunto de
+'   instrumentos para X1 y X3, respectivamente:
+'   Inst1 y Inst2. Los grupos deberan crearse de
+'   la forma:
+'              GROUP Indep X1 X3 X2 c
+'              GROUP Instru Inst1 Inst2 X2 c
+' Debera definir el numero de regresores estocasticos
+'   (!Est).
+' ============================================================
+
+'Defina el numero de regresores estocasticos:
+!Est = 1
+
+'Preparacion de la tabla de resultados y objetos.
+' ============================================================
+
+%Reg = ""
+FOR !i = 1 to Indep.@COUNT
+   %Reg = %Reg + " " + Indep.@SERIESNAME(!i)
+NEXT
+
+%Estoc = ""
+FOR !i = 1 to !Est
+   %Estoc = %Estoc + " " + Indep.@SERIESNAME(!i)
+NEXT
+
+%Inst = ""
+FOR !i = 1 to Instru.@COUNT
+   %Inst = %Inst + " " + Instru.@SERIESNAME(!i)
+NEXT
+
+TABLE(9,2) Hausman
+SETCOLWIDTH(Hausman,1,13)
+SETCOLWIDTH(Hausman,2,30)
+SETCELL(Hausman,1,1,"RESULTADOS DE LA PRUEBA DE HAUSMAN")
+SETLINE(Hausman,2)
+SETCELL(Hausman,3,1,"Regresores","l")
+SETCELL(Hausman,3,2,%Reg,"l")
+SETCELL(Hausman,4,1,"Estocasticos","l")
+SETCELL(Hausman,4,2,%Estoc,"l")
+SETLINE(Hausman,5)
+SETCELL(Hausman,6,1,"Instrumentos","l")
+SETCELL(Hausman,6,2,%Inst,"l")
+SETCELL(Hausman,7,1,"Hstat","c")
+SETCELL(Hausman,8,1,"Prob.","c")
+SETLINE(Hausman,9)
+
+'Calculo del estadistico de Hausman.
+' ============================================================
+
+STOM(Indep,_X)
+EQUATION _TempMico
+EQUATION _TempInst
+
+_TempMico.LS %0 Indep
+!Var = _TempMico.@SE^2
+MATRIX _CovMico = !Var*@INVERSE(@TRANSPOSE(_X)*_X)
+
+STOM(Instru,_Z)
+_TempInst.TSLS %0 Indep @ Instru
+MATRIX _CovInst = !Var*@INVERSE(@TRANSPOSE(_X)*_Z*@INVERSE(@TRANSPOSE(_Z)*_Z)*@TRANSPOSE(_Z)*_X)
+
+VECTOR _QTodo = _TempInst.@COEFS - _TempMico.@COEFS
+
+MATRIX _RestaCov = @SUBEXTRACT(_CovInst,1,1,!Est,!Est)-@SUBEXTRACT(_CovMico,1,1,!Est,!Est)
+
+VECTOR _Q = @SUBEXTRACT(_QTodo,1,1,!Est,1)
+
+MATRIX _Resp = @TRANSPOSE(_Q)*@INVERSE(_RestaCov)*_Q
+
+!H = _Resp(1,1)
+!Prob = @CHISQ(!H,!Est)
+
+SETCELL(Hausman,7,2,!H,3,"l")
+SETCELL(Hausman,8,2,!Prob,4,"l")
+
+'Eliminamos objetos temporales:
+' ============================================================
+D _*
+
+'Fin del programa.

@@ -1,0 +1,171 @@
+' ============================================================
+' Programa 4.2
+' Test de Farrar-Glauber
+' (pp. 276-281)
+' ============================================================
+' Programa para aplicar el test de Farrar-Glauber.
+' ============================================================
+' USO:
+'
+' El programa tomara como unico argumento (%0)
+' el nombre de un grupo que contendra las
+' series por comprobar. No incluya un
+' intercepto en este grupo. Se devolvera
+' como respuesta un reporte con los
+' resultados del test en la tabla
+' Resultados_FG.
+'
+' Debe tener precaucion, ya que los
+' resultados diferiran de acuerdo con la
+' muestra seleccionada antes de ejecutar
+' este programa.
+' ============================================================
+
+!Significancia = 0.05
+
+' A. Test de Ortogonalidad - Chi-cuadrado.
+' ============================================================
+'Calculamos el determinante estandarizado
+'de la matriz de correlaciones de las
+'series analizadas.
+
+!Det = @DET(@COR({%0}))
+
+'El numero de observaciones de la muestra
+'se puede calcular mediante un artilugio
+'sencillo:
+GENR __Test = 0
+!Obs = @OBS(__Test)
+D __Test
+
+'El numero de series en el grupo sera:
+!k = {%0}.@COUNT
+
+'El estadistico Chi-cuadrado y su probabilidad
+'seran entonces:
+IF !Det = 0 THEN
+   !ProbChiCuadrado = 0
+ELSE
+   !ChiCuadrado = -(!Obs-1-(2*!k+5)/6)*@LOG(!Det)
+   !ProbChiCuadrado = @CHISQ(!ChiCuadrado,!k*(!k-1)/2)
+ENDIF
+
+' B. Test "F"
+' ============================================================
+'Regresionamos cada variable explicativa contra
+'el resto, buscando el coeficiente R2 mas alto:
+
+!MaxR2 = 0
+!MejorRegresor = 0
+
+IF @ISOBJECT("_EqTemp") THEN
+   D _EqTemp
+ENDIF
+EQUATION _EqTemp
+
+'Para cada uno de los regresores...
+FOR !i = 1 TO !k
+
+   'Lo regresionamos versus el resto...
+   GROUP _GTemp.ADD {%0}
+   %Nombre = {%0}.@SERIESNAME(!i)
+   _GTemp.DROP %Nombre
+   _EqTemp.LS {%0}(!i) C _GTemp
+   D _GTemp
+
+   'Y evaluamos y actualizamos los resultados:
+   IF _EqTemp.@R2 > !MaxR2 THEN
+         !MaxR2 = _EqTemp.@R2
+         !MejorRegresor = !i
+   ENDIF
+
+NEXT !I
+
+D _EqTemp
+
+'Aplicamos la prueba estadistica:
+
+IF !MaxR2 = 1 THEN
+   !ProbF = 0
+ELSE
+   !F = (!MaxR2 / (!k - 1)) / ((1-!MaxR2) / (!Obs - !k))
+   !ProbF = @FDIST(!F,!k-1,!Obs-!k)
+ENDIF
+
+' C. Test "t"
+' ============================================================
+'Identificamos el coeficiente de correlacion
+'parcial mas alto entre los regresores:
+
+IF @ISOBJECT("_MTemp") THEN
+   D _MTemp
+ENDIF
+MATRIX _MTemp = ABS(@COR({%0}))
+
+!Max_r = 0
+
+FOR !i = 1 to !k
+   FOR !j = !i+1 to !k
+         IF _MTemp(!i,!j) > !Max_r THEN
+               !Max_r = _MTemp(!i,!j)
+               !Max_r_1 = !i
+               !Max_r_2 = !j
+         ENDIF
+   NEXT !j
+NEXT !i
+D _MTemp
+
+'Y aplicamos la prueba estadistica:
+
+IF !Max_r = 1 THEN
+   !ProbT = 0
+ELSE
+   !t = (!Max_r * @SQR(!Obs - !k)) / @SQR(1 - !Max_r)
+   !ProbT = @TDIST(!t,!Obs-!k)
+ENDIF
+
+' Construimos la tabla de resultados.
+' ============================================================
+
+IF @ISOBJECT("Resultados_FG") THEN
+   D Resultados_FG
+ENDIF
+
+TABLE(17,6)Resultados_FG
+
+Resultados_FG(1,1)="RESULTADOS DE LA PRUEBA DE FARRAR-GLAUBER"
+SETLINE(Resultados_FG,2)
+
+Resultados_FG(4,1)="A. Prueba Chi-cuadrado"
+SETLINE(Resultados_FG,5)
+Resultados_FG(6,1)="Prob = "
+SETCELL(Resultados_FG,6,2,!ProbChiCuadrado,4)
+IF !ProbChiCuadrado<!Significancia THEN
+   Resultados_FG(7,1)="Se sospecha multicolinealidad en la matriz de correlaciones"
+ELSE
+   Resultados_FG(7,1)="La prueba no arroja sospechas de multicolinealidad"
+ENDIF
+
+Resultados_FG(9,1)="B. Prueba F"
+SETLINE(Resultados_FG,10)
+Resultados_FG(11,1)="Prob = "
+SETCELL(Resultados_FG,11,2,!ProbF,4)
+IF !ProbF<!Significancia THEN
+   Resultados_FG(12,1)="Se sospecha multicolinealidad causada por el regresor numero "+@STR(!MejorRegresor)
+ELSE
+   Resultados_FG(12,1)="La prueba no arroja sospechas de multicolinealidad"
+ENDIF
+
+Resultados_FG(14,1)="C. Prueba t"
+SETLINE(Resultados_FG,15)
+Resultados_FG(16,1)="Prob = "
+SETCELL(Resultados_FG,16,2,!ProbT,4)
+IF !ProbT<!Significancia THEN
+   Resultados_FG(17,1)="Se sospecha multicolinealidad causada por los regresores numero "+@STR(!Max_r_1)+" y "+@STR(!Max_r_2)
+ELSE
+   Resultados_FG(17,1)="La prueba no arroja sospechas de multicolinealidad"
+ENDIF
+
+'Y finalmente la presentamos en pantalla
+' ============================================================
+=Resultados_FG

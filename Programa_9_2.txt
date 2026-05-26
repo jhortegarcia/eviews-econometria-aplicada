@@ -1,0 +1,200 @@
+' ============================================================
+' Programa 9.2
+' Aplicacion recursiva del test de Zivot y Andrews
+' (pp. 580-585)
+' ============================================================
+'Programa para la aplicacion recursiva del
+'test de Zivot y Andrews.
+' ============================================================
+'USO:
+'         Programa para ser ejecutado en un
+'         workfile "undated".
+'         El nombre de la serie por analizar
+'         debera pasarse como el primer argumento
+'         del programa (%0).
+'         Es necesario elegir un nivel de holgura
+'         apropiado para la generacion de las dummys
+'         !Hol) y el numero maximo de rezagos
+'         para iniciar la ecuacion del test (!Rez).
+' ============================================================
+
+'Inicializacion de variables y objetos.
+' ============================================================
+
+'Nivel de holgura
+!Hol = 10
+
+'Numero maximo de rezagos
+!Rez = 6
+
+GENR _Serie=%0
+GENR _Dserie = D(%0)
+
+'Estas series contendran los estadisticos
+'estimados para cada fecha tentativa de quiebre.
+GENR _ZivotA = 0
+GENR _ZivotB = 0
+GENR _ZivotC = 0
+
+'Estas series contienen los valores criticos de Zivot y
+'Andrews para cada tipo de modelo (alpha = 5%).
+GENR _VcritA = -4.80
+GENR _VcritB = -4.42
+GENR _VcritC = -5.08
+
+GROUP _M_A _ZivotA _VcritA
+GROUP _M_B _ZivotB _VcritB
+GROUP _M_C _ZivotC _VcritC
+
+!Obs = @OBS(_Serie)
+!Fin = !Obs-!Hol
+
+'Elementos para la eleccion del tipo de modelo optimo.
+!FMaxA = 0
+!FMaxB = 0
+!FMaxC = 0
+VECTOR(3) _Evaluacion = 0
+
+EQUATION _Model_A
+EQUATION _Model_B
+EQUATION _Model_C
+EQUATION _Temp
+
+TABLE(8,2) Reporte_%0
+SETCOLWIDTH(Reporte_%0,1,15)
+SETCOLWIDTH(Reporte_%0,2,30)
+SETCELL(Reporte_%0,1,1,"Resultados de la prueba F")
+SETCELL(Reporte_%0,2,1,"Serie analizada")
+SETCELL(Reporte_%0,2,2,%0,"l")
+SETLINE(Reporte_%0,3)
+SETLINE(Reporte_%0,8)
+SETCELL(Reporte_%0,4,1,"Modelo A","c")
+SETCELL(Reporte_%0,5,1,"Modelo B","c")
+SETCELL(Reporte_%0,6,1,"Modelo C","c")
+SETCELL(Reporte_%0,7,1,"Mejor Modelo","c")
+%Resp = "El quiebre esta en el periodo "
+
+'ALGORITMO DE BUSQUEDA
+' ============================================================
+
+FOR !i = !Hol to !Fin
+
+   'Generacion de dummies.
+   GENR _Dum = 0
+   SMPL !i !Obs
+   GENR _Dum = 1
+   SMPL @ALL
+   GENR _Dut = @TREND*_Dum
+
+   'Evaluacion del Modelo C.
+   ' ============================================================
+   _Temp.LS _Serie c @TREND(1) _Dum _Dut
+   IF _Temp.@F > !FMaxC THEN
+         !FMaxC = _Temp.@F
+         SETCELL(Reporte_%0,6,2,%Resp+@str(!i-1),"l")
+   ENDIF
+
+   GROUP _Rezagos _Dserie(-1 to -!Rez)
+   !ultimo_r = 5 + !Rez
+   !r = -!Rez
+   FOR !j = !ultimo_r to 6 step -1
+         _Model_C.LS _Dserie c _Serie(-1) @TREND(1) _Dum _Dut _Rezagos
+         IF @TDIST(@TSTAT(!j),@REGOBS-@NCOEF)<= 0.05 THEN
+               _ZivotC(!i) = @TSTAT(2)
+               EXITLOOP
+         ELSE
+               _Rezagos.DROP _DSerie(!r)
+               !r = !r+1
+         ENDIF
+   NEXT
+
+   IF !r = 0 THEN
+         _Model_C.LS _Dserie c _Serie(-1) @TREND(1) _Dum _Dut
+         _ZivotC(!i) = @TSTAT(2)
+   ENDIF
+
+   'Evaluacion del Modelo B.
+   ' ============================================================
+   _Temp.LS _Serie c @TREND(1) _Dut
+   IF _Temp.@F > !FMaxB THEN
+         !FMaxB = _Temp.@F
+         SETCELL(Reporte_%0,5,2,%Resp+@str(!i-1),"l")
+   ENDIF
+
+   GROUP _Rezagos _Dserie(-1 to -!Rez)
+   !ultimo_r = 4 + !Rez
+   !r = -!Rez
+   FOR !j = !ultimo_r to 5 step -1
+         _Model_B.LS _Dserie c _Serie(-1) @TREND(1) _Dut _Rezagos
+         IF @TDIST(@TSTAT(!j),@REGOBS-@NCOEF)<= 0.05 THEN
+               _ZivotB(!i) = @TSTAT(2)
+               EXITLOOP
+         ELSE
+               _Rezagos.DROP _Dserie(!r)
+               !r = !r+1
+         ENDIF
+   NEXT
+
+   IF !r = 0 THEN
+         _Model_B.LS _Dserie c _Serie(-1) @TREND(1) _Dut
+         _ZivotB(!i) = @TSTAT(2)
+   ENDIF
+
+   'Evaluacion del Modelo A.
+   ' ============================================================
+   _Temp.LS _Serie c @TREND(1) _Dum
+   IF _Temp.@F > !FMaxA THEN
+         !FMaxA = _Temp.@F
+         SETCELL(Reporte_%0,4,2,%Resp+@str(!i-1),"l")
+   ENDIF
+
+   GROUP _Rezagos _Dserie(-1 to -!Rez)
+   !ultimo_r = 4 + !Rez
+   !r = -!Rez
+   FOR !j = !ultimo_r to 5 step -1
+         _Model_A.LS _Dserie c _Serie(-1) @TREND(1) _Dum _Rezagos
+         IF @TDIST(@TSTAT(!j),@REGOBS-@NCOEF)<= 0.05 THEN
+               _ZivotA(!i) = @TSTAT(2)
+               EXITLOOP
+         ELSE
+               _Rezagos.DROP _DSerie(!r)
+               !r = !r+1
+         ENDIF
+   NEXT
+
+   IF !r = 0 THEN
+         _Model_A.LS _Dserie c _Serie(-1) @TREND(1) _Dum
+         _ZivotA(!i) = @TSTAT(2)
+   ENDIF
+
+NEXT
+
+' ============================================================
+
+_Evaluacion(1) = !FMaxA
+_Evaluacion(2) = !FMaxB
+_Evaluacion(3) = !FMaxC
+
+!Maximo = @MAX(_Evaluacion)
+
+FOR !i = 1 to 3
+   IF _Evaluacion(!i) = !Maximo THEN
+   SETCELL(Reporte_%0,7,2,!i,0,"l")
+   ENDIF
+NEXT
+
+SMPL !Hol !Fin
+
+GRAPH _Resultado_A.line _M_A
+GRAPH _Resultado_B.line _M_B
+GRAPH _Resultado_C.line _M_C
+GRAPH ZA_%0.MERGE _Resultado_A _Resultado_B _Resultado_C
+
+SMPL @ALL
+
+' ============================================================
+
+'Eliminamos elementos temporales.
+D _*
+
+'Fin del programa.

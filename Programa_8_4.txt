@@ -1,0 +1,92 @@
+' ============================================================
+' Programa 8.4
+' Eficiencia del estimador MCG/SUR
+' (pp. 537-539)
+' ============================================================
+'Verificacion de la eficiencia del estimador MCG/
+'SUR frente a diferentes grados de
+'correlacion entre los errores.
+' ============================================================
+
+WORKFILE u 100
+
+TABLE(30,6) Reporte
+SETCOLWIDTH(Reporte,1,10)
+SETCOLWIDTH(Reporte,2,12)
+SETCELL(Reporte,1,3,"VARIANZAS MICO VS. MCG/SUR")
+SETLINE(Reporte,2)
+SETCELL(Reporte,3,2,"Var. del ruido","l")
+SETCELL(Reporte,3,1,"Coef. de")
+SETLINE(Reporte,4)
+
+%Rep1 = "Y1 = C(1) + C(2)*X1 + C(3)*X2"
+%Rep2 = "Y2 = C(4)*X3 + C(5)*X4 + C(6)"
+
+'Para los cuatro coeficientes asociados a
+'pendientes:
+!Fil = 5
+FOR !i = 2 to 5
+   %Name = "X"+@STR(!i-1)
+   VECTOR(1000) _B!i_Mico = 0
+   VECTOR(1000) _B!i_Sur = 0
+   SETCELL(Reporte,!Fil,1,%Name)
+   SETCELL(Reporte,!Fil,2,"D.E. Mico","l")
+   SETCELL(Reporte,!Fil+1,2,"D.E. Sur","l")
+   SETCELL(Reporte,!Fil+2,2,"Diferencia","l")
+   SETLINE(Reporte,!Fil+3)
+   !Fil = !Fil+4
+NEXT
+
+'Generamos las variables predeterminadas:
+GENR X1 = 2 + NRND
+GENR X2 = 1.5 + NRND
+GENR X3 = NRND*1.5
+GENR X4 = NRND
+
+SYSTEM Sur
+
+Sur.APPEND %Rep1
+Sur.APPEND %Rep2
+
+!Col = 3
+FOR !j = 0.5 to 2 step 0.5
+
+   FOR !i = 1 to 1000
+
+         GENR Error = NRND
+         GENR Y1 =1.84 + 1.78*X1 + 2.17*X2 + Error + NRND*!j
+         GENR Y2 =1.5*X3 + 1.25*X4 + 2.9 + Error + NRND*!j
+
+         Sur.LS
+
+         FOR !p = 2 to 5
+               _B!p_Mico(!i) = Sur.@COEFS(!p)
+         NEXT
+
+         Sur.SUR
+
+         FOR !p = 2 to 5
+               _B!p_Sur(!i) = Sur.@COEFS(!p)
+         NEXT
+
+   NEXT
+
+   SETCELL(Reporte,3,!Col,!j^2,2)
+
+   !Fil = 5
+   FOR !p = 2 to 5
+      SETCELL(Reporte,!Fil,!Col,@STDEV(_B!p_Mico),4)
+      SETCELL(Reporte,!Fil+1,!Col,@STDEV(_B!p_Sur),4)
+      SETCELL(Reporte,!Fil+2,!Col,@STDEV(_B!p_Mico)-@STDEV(_B!p_Sur),4)
+            !Fil = !Fil+4
+   NEXT
+
+   !Col = !Col+1
+
+NEXT
+
+'Eliminamos los objetos temporales:
+' ============================================================
+D _*
+
+'Fin del programa.

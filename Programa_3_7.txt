@@ -1,0 +1,108 @@
+' ============================================================
+' Programa 3.7
+' Tecnica de regresiones moviles
+' Momento optimo de un quiebre
+' (pp. 234-236)
+' ============================================================
+'================================================
+' Programa para hallar el momento optimo de
+' un quiebre estructural
+'================================================
+
+' USO:
+'
+' El nombre de la serie dependiente debera
+' indicarse como primer argumento (%0).
+' Los regresores iran en un grupo cuyo nombre
+' debera indicarse como segundo argumento (%1).
+' Opcionalmente, puede indicarse un nombre
+' de serie como tercer argumento (%2) para
+' guardar en ella los coeficientes de ajuste movil.
+'
+' EJEMPLO:
+'               RUN BuscaQuiebre Y Regresores R2
+'
+'================================================
+
+SUBROUTINE GeneraDummies(SCALAR !Posicion)
+
+   SMPL @FIRST !Posicion
+   GENR _DInt = 0
+   GENR _DTrend = 0
+
+   SMPL !Posicion+1 @LAST
+   GENR _DInt = 1
+   GENR _DTrend = @TREND(!Posicion)
+
+   SMPL @ALL
+
+ENDSUB
+
+SUBROUTINE EvaluaQuiebre(SCALAR !Posicion)
+
+   CALL GeneraDummies(!Posicion)
+   _Regresion.LS %0 %1 _DInt _Dtrend
+
+   'Si se ha pedido guardar los R2 y no existe
+   'el objeto, entonces se crea.
+
+   IF %2<>" " THEN
+         IF NOT @ISOBJECT(%2) THEN
+               SERIES {%2} = 0
+         ENDIF
+         {%2}(!Posicion)=_Regresion.@R2
+
+   ENDIF
+
+   'Se actualizan los optimos.
+
+   IF _Regresion.@R2>!MejorR2 THEN
+         !MejorR2 = _Regresion.@R2
+         !MejorQuiebre = !Posicion
+   ENDIF
+
+ENDSUB
+
+'================================================
+' Aqui comienza el cuerpo principal del programa.
+'================================================
+
+'Asumiremos que el quiebre estructural no
+'puede encontrarse en las observaciones
+'extremas, a una distancia !Xtra de
+'los limites del archivo.
+!Xtra = 20
+
+'El mejor punto de quiebre tentativo lo
+'guardaremos en:
+!MejorQuiebre = 0
+
+'Y usaremos el R-Cuadrado como criterio para
+'escoger la mejor regresion:
+!MejorR2 = 0
+
+'Creamos la ecuacion temporal que utilizaremos:
+Equation _Regresion
+
+' Esta es la seccion central del procedimiento
+'================================================
+
+'Se probaran todas las observaciones entre !Xtra y
+'@Last-!Xtra.
+
+FOR !Punto = !Xtra to @ROWS({%0})-!Xtra
+
+   CALL EvaluaQuiebre(!Punto)
+
+NEXT !Punto
+
+'Fin de las regresiones, se guarda el
+'resultado final en un escalar:
+SCALAR MejorQuiebre = !MejorQuiebre
+
+'Se eliminan las variables temporales:
+D _Regresion
+D _DInt _DTrend
+
+'================================================
+'Fin del programa.

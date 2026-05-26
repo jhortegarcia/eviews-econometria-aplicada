@@ -1,0 +1,112 @@
+' ============================================================
+' Programa 6.1
+' Metodo iterativo de Cochrane-Orcutt
+' (pp. 389-392)
+' ============================================================
+'Programa para la estimacion del coeficiente de
+'correlacion sobre la base del metodo iterativo
+'de Cochrane-Orcutt.
+' ============================================================
+'USO:
+'El nombre de la variable dependiente debera
+'pasarse como el primer argumento del programa.
+'Debera crearse un grupo llamado Indep que
+'contenga todos los regresores del modelo.
+'Debera elegir un nivel de convergencia y
+'un numero maximo de iteraciones.
+' ============================================================
+
+'Fijar nivel de convergencia y numero
+'maximo de iteraciones.
+!Conver=0.00001
+!MaxIter = 10
+
+TABLE(5,2) Result_CO
+Result_CO(1,1) = "Metodo de Cochrane-Orcutt"
+SETCOLWIDTH(Result_CO,1,15)
+SETLINE(Result_CO,2)
+Result_CO(3,1) = "Valor rho"
+Result_CO(4,1) = "Convergencia"
+SETCELL(Result_CO,4,2,!Conver,6)
+Result_CO(5,1) = "Iteraciones"
+
+EQUATION _Temp1
+EQUATION _Temp2
+EQUATION _Temp3
+EQUATION _Temp4
+
+GROUP Indep_dif
+!k = Indep.@COUNT
+
+'Inicio del proceso de busqueda iterativo.
+' ============================================================
+
+_Temp1.LS %0 c Indep
+
+Genr _Residuo1 = Resid
+
+FOR !i = 1 to !MaxIter
+
+   !j=!i+1
+
+   _Temp2.LS _Residuo!i _Residuo!i(-1)
+   SCALAR Rho!i=_Temp2.C(1)
+
+   GENR _DepDif = %0 - Rho!i*%0(-1)
+
+   FOR !n = 1 to !k
+         %Name = Indep.@SERIESNAME(!n)
+         GENR _IndeDif_!n = Indep(!n) - Rho!i*%Name(-1)
+         Indep_dif.ADD _IndeDif_!n
+   NEXT
+
+   _Temp3.LS _DepDif c Indep_dif
+   GENR _Estimado0 = 0
+
+   FOR !n = 1 to !k
+         !a = !n-1
+         !b = !n+1
+         GENR _Estimado!n = _Estimado!a + _Temp3.C(!b)*Indep(!n)
+   NEXT
+
+   GENR _Estimado = _Estimado!k + _Temp3.C(1)/(1-Rho!i)
+
+         GENR _Residuo!j = %0 - _Estimado
+
+   _Temp4.LS _Residuo!j _Residuo!j(-1)
+   SCALAR Rho!j=_Temp4.C(1)
+
+   IF ABS(Rho!i-Rho!j) <= !Conver THEN
+         !Mejorrho = Rho!i
+         !Loop = !i
+         EXITLOOP
+   ENDIF
+
+NEXT
+
+'Registro de resultados.
+' ============================================================
+SETCELL(Result_CO,3,2,!Mejorrho,4)
+SETCELL(Result_CO,5,2,!Loop,0)
+
+'Eliminamos los objetos temporales.
+' ============================================================
+
+FOR !i = 1 to !Loop+1
+   D _Residuo!i
+   D Rho!i
+NEXT
+
+FOR !i = 1 to !k
+   D _Estimado!i
+   D _IndeDif_!i
+NEXT
+
+FOR !i = 1 to 4
+   D _Temp!i
+NEXT
+
+D _Estimado0
+D _Estimado
+D Indep_dif
+D _DepDif

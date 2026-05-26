@@ -1,0 +1,44 @@
+' ============================================================
+' Programa 3.4
+' Como registrar un maximo? Metodo B
+' (pp. 222-223)
+' ============================================================
+
+'Las variables de resultados seran las siguientes, que
+'inicializaremos en cero. Si se estuviera buscando un valor
+'minimo, la variable !ValorMinimo se inicializaria en un
+'numero muy grande, superior a cualquiera que se pudiera
+'encontrar al probar los casos.
+'En general, los valores iniciales deberan ser los extremos
+'suboptimos.
+
+!ValorMaximo = 0
+!PosDelMaximo = 0
+
+FOR !i = 1 TO !NumCasos
+
+'================================================
+'En este punto se desarrolla el analisis requerido.
+'================================================
+
+'Asumiremos que lo que se desea maximizar es
+'el valor de la variable !Valor, que se debio
+'calcular dentro del analisis realizado mas arriba.
+
+'Ahora comparamos el valor calculado con el
+'maximo tentativo hasta el momento.
+
+   IF !Valor > !ValorMaximo THEN
+
+      'Si es mayor, entonces actualizamos el
+      'maximo tentativo hasta el momento.
+
+         !ValorMaximo = !Valor
+
+      'Y registramos cualquier informacion
+      'adicional relacionada con el maximo.
+
+         !PosDelMaximo = !i
+
+   ENDIF
+NEXT !i
