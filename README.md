@@ -4,7 +4,7 @@ Transcripción de los programas en *Econometric Views* incluidos en:
 
 > **Castro, J. F. & Rivas-Llosa, R.** (2005). *Econometría Aplicada*. Universidad del Pacífico, Lima.
 
-Este repositorio contiene 21 programas escritos en el lenguaje de programación de **EViews**, organizados según el capítulo del libro en que aparecen. Los archivos fueron transcritos manualmente a partir del PDF de la obra, con anotaciones sobre ambigüedades tipográficas y correcciones menores documentadas al pie de cada archivo.
+Este repositorio contiene 21 programas escritos en el lenguaje de programación de **EViews**, organizados según el capítulo del libro en que aparecen. Los archivos fueron transcritos manualmente a partir del PDF de la obra.
 
 ---
 
